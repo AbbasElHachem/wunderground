@@ -60,7 +60,7 @@ import time
 main_dir = Path(os.getcwd())
 os.chdir(main_dir)
 
-my_headers = {'accept-encoding': 'gzip'}
+# my_headers = {'accept-encoding': 'gzip'}
 
 # api_stn = (r'http://api.weather.com/v2/pws/observations/'
 #            'current?apiKey=6532d6454b8aa370768e63d6ba5a832e&'
@@ -91,7 +91,7 @@ my_headers = {'accept-encoding': 'gzip'}
 
 
 station_ID = 'ISTUTTGA863'
-station_key = '6532d6454b8aa370768e63d6ba5a832e'
+api_key = '6532d6454b8aa370768e63d6ba5a832e'
 # 6cd1ae3a7922473091ae3a7922e7303e
 start_date = '20190101'
 end_date = '20191230'
@@ -103,24 +103,32 @@ for x in time_range:
     WU_date = str(x).split()[0].replace('-', '')
 
     url = ('http://api.weather.com/v2/pws/history/all?stationId=' + station_ID +
-           '&format=json&units=m&date=' + WU_date + '&apiKey=' + station_key)
+           '&format=json&units=m&date=' + WU_date + '&apiKey=' + api_key)
     try:
         df = pd.read_json(url)
         tf = pd.read_json((df['observations']).to_json(), orient='index')
         tf2 = pd.read_json((tf['metric']).to_json(),  orient='index')
         tf3 = tf.join(tf2)
 
-        tf_out = tf3[['obsTimeLocal', 'tempHigh', 'dewptHigh', 'winddirAvg', 'windspeedAvg', 'windgustHigh', 'pressureMax',
-                      'humidityAvg', 'precipRate', 'precipTotal', 'uvHigh', 'solarRadiationHigh']]
+        tf_out = tf3[['obsTimeLocal', 'tempHigh', 'dewptHigh',
+                      'winddirAvg', 'windspeedAvg', 'windgustHigh', 'pressureMax',
+                      'humidityAvg', 'precipRate', 'precipTotal',
+                      'uvHigh', 'solarRadiationHigh']]
 
-        tf_sum = {'Record': ['obsTimeLocal', 'tempHigh', 'tempLow', 'dewptHigh', 'dewptLow', 'winddirAvg', 'windspeedAvg', 'windgustHigh',
-                             'pressureMax', 'pressureMin', 'humidityAvg', 'precipRate', 'precipTotal', 'uvHigh', 'solarRadiationHigh'],
-                  'Observation': [tf3['obsTimeLocal'].max(), tf3['tempHigh'].max(), tf3['tempLow'].min(), tf3['dewptHigh'].max(),
-                                  tf3['dewptLow'].min(), tf3['winddirAvg'].mean(
-                  ), tf3['windspeedAvg'].mean(), tf3['windgustHigh'].max(),
-            tf3['pressureMax'].max(), tf3['pressureMin'].min(
-                  ), tf3['humidityAvg'].mean(), tf3['precipRate'].max(),
-            tf3.at[275, 'precipTotal'], tf3['uvHigh'].mean(), tf3['solarRadiationHigh'].mean()]
+        tf_sum = {'Record': ['obsTimeLocal', 'tempHigh', 'tempLow',
+                             'dewptHigh', 'dewptLow', 'winddirAvg', 'windspeedAvg', 'windgustHigh',
+                             'pressureMax', 'pressureMin', 'humidityAvg',
+                             'precipRate', 'precipTotal', 'uvHigh', 'solarRadiationHigh'],
+                  'Observation': [tf3['obsTimeLocal'].values,
+                                  tf3['tempHigh'].values, tf3['tempLow'].values,
+                                  tf3['dewptHigh'].values,
+                                  tf3['dewptLow'].values, tf3['winddirAvg'].values,
+                                  tf3['windspeedAvg'].mean(
+                  ), tf3['windgustHigh'].max(),
+            tf3['pressureMax'].values, tf3['pressureMin'].values,
+            tf3['humidityAvg'].values, tf3['precipRate'].values,
+            tf3['precipTotal'].values, tf3['uvHigh'].values,
+            tf3['solarRadiationHigh'].values]
         }
 
         tf_sum_base = pd.DataFrame(tf_sum, columns=['Record', 'Observation'])
@@ -129,7 +137,8 @@ for x in time_range:
 
         print(WU_date)
 
-        out_path = r'X:\staff\elhachem\GitHub\wunderground\data\%s.xlsx' % station_ID
+        out_path = r'X:\exchange\ElHachem\wunderground\data\%s_%s.xlsx' % (
+            station_ID, WU_date)
         with pd.ExcelWriter(out_path) as writer:
             tf_out.to_excel(writer, sheet_name=WU_date)
             tf_sum_out.to_excel(writer, sheet_name='Summary')
